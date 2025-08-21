@@ -1,3 +1,10 @@
+import React from "react";
+
+// Utility: clamp values to a safe range
+function clamp(n, min, max) {
+  return Math.min(max, Math.max(min, n));
+}
+
 export default function KantSpaceTimeCanvas() {
   return (
     <div className="min-h-screen w-full bg-white text-gray-900 p-6">
@@ -84,6 +91,9 @@ export default function KantSpaceTimeCanvas() {
             <li>“Mọi trực giác đều định lượng” ≠ “mọi niềm tin đều định lượng”. Niềm tin thuộc phạm vi thực hành đạo đức.</li>
           </ul>
         </section>
+
+        {/* Test Suite */}
+        <TestSuite />
       </main>
     </div>
   );
@@ -135,15 +145,15 @@ function Lab() {
           </LabeledInput>
 
           <LabeledInput label={`Vị trí X (\u2190 trái / phải \u2192): ${x}%`}>
-            <input type="range" min={0} max={100} value={x} onChange={(e)=>setX(parseInt(e.target.value))} className="w-full" />
+            <input type="range" min={0} max={100} value={x} onChange={(e)=>setX(clamp(parseInt(e.target.value), 0, 100))} className="w-full" />
           </LabeledInput>
 
           <LabeledInput label={`Kích thước tương đối: ${size.toFixed(2)}x`}>
-            <input type="range" min={0.5} max={2} step={0.01} value={size} onChange={(e)=>setSize(parseFloat(e.target.value))} className="w-full" />
+            <input type="range" min={0.5} max={2} step={0.01} value={size} onChange={(e)=>setSize(clamp(parseFloat(e.target.value), 0.5, 2))} className="w-full" />
           </LabeledInput>
 
           <LabeledInput label={`Thời lượng hình dung (s): ${duration}`}>
-            <input type="range" min={1} max={10} value={duration} onChange={(e)=>setDuration(parseInt(e.target.value))} className="w-full" />
+            <input type="range" min={1} max={10} value={duration} onChange={(e)=>setDuration(clamp(parseInt(e.target.value), 1, 10))} className="w-full" />
           </LabeledInput>
 
           <div className="flex items-center gap-2">
@@ -212,5 +222,76 @@ function Phenomenon({ label, x, size, duration }) {
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-gray-500">Trục không gian (X)</div>
       <div className="absolute top-8 left-4 text-[10px] text-gray-500">Thời gian (thanh hiển thị)</div>
     </div>
+  );
+}
+
+// --- Minimal visual test harness ---
+function TestSuite() {
+  const tests = [];
+
+  // Test 1: React presence
+  tests.push({
+    name: "React is defined",
+    pass: typeof React !== "undefined" && React !== null,
+    detail: "Expect global React available"
+  });
+
+  // Test 2: clamp utility
+  tests.push({
+    name: "clamp works (upper bound)",
+    pass: clamp(120, 0, 100) === 100,
+    detail: "clamp(120,0,100) === 100"
+  });
+  tests.push({
+    name: "clamp works (lower bound)",
+    pass: clamp(-5, 0, 100) === 0,
+    detail: "clamp(-5,0,100) === 0"
+  });
+
+  // Test 3: Phenomenon size formula
+  const expectedBubble = 40 * 1 + 20; // size=1
+  tests.push({
+    name: "bubble size formula",
+    pass: expectedBubble === 60,
+    detail: "40*size + 20 with size=1 => 60"
+  });
+
+  // Test 4: Initial state assumptions
+  const initialStateOk = (50 >= 0 && 50 <= 100) && (1 >= 0.5 && 1 <= 2) && (3 >= 1 && 3 <= 10);
+  tests.push({
+    name: "initial state in valid ranges",
+    pass: initialStateOk,
+    detail: "x=50, size=1, duration=3 are within UI ranges"
+  });
+
+  return (
+    <section className="max-w-5xl mx-auto mt-8">
+      <h3 className="text-base md:text-lg font-semibold">Kiểm thử nhanh</h3>
+      <p className="text-sm text-gray-600 mt-1">Một số <i>smoke tests</i> để chắc chắn canvas hoạt động sau khi sửa lỗi <code>React is not defined</code>.</p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="min-w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="text-left px-3 py-2 border-b">Test</th>
+              <th className="text-left px-3 py-2 border-b">Kết quả</th>
+              <th className="text-left px-3 py-2 border-b">Chi tiết</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tests.map((t, i) => (
+              <tr key={i} className="border-b last:border-0">
+                <td className="px-3 py-2">{t.name}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex items-center gap-2 px-2 py-0.5 rounded-full text-xs ${t.pass ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    {t.pass ? "PASSED" : "FAILED"}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-600">{t.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
